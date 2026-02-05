@@ -1,0 +1,189 @@
+.active-call-window {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #000;
+    z-index: 1500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.active-call-window.minimized {
+    top: auto;
+    left: auto;
+    right: 20px;
+    bottom: 20px;
+    width: 320px;
+    height: 240px;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+}
+
+.call-video-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.remote-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #1a1a1a;
+}
+
+.local-video {
+    position: absolute;
+    bottom: 80px;
+    right: 20px;
+    width: 200px;
+    height: 150px;
+    border-radius: var(--radius-lg);
+    object-fit: cover;
+    border: 2px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
+    background: #1a1a1a;
+}
+
+.active-call-window.minimized .local-video {
+    width: 80px;
+    height: 60px;
+    bottom: 60px;
+    right: 10px;
+}
+
+.call-info {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--radius-full);
+    backdrop-filter: blur(10px);
+}
+
+.call-status {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    color: white;
+    font-weight: 500;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    background: #22c55e;
+    border-radius: 50%;
+    animation: blink 2s ease-in-out infinite;
+}
+
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.3;
+    }
+}
+
+.call-controls {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: var(--spacing-lg);
+    background: rgba(0, 0, 0, 0.7);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--radius-full);
+    backdrop-filter: blur(10px);
+}
+
+.active-call-window.minimized .call-controls {
+    bottom: 10px;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+}
+
+.control-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.active-call-window.minimized .control-btn {
+    width: 40px;
+    height: 40px;
+}
+
+.active-call-window.minimized .control-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.control-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.control-btn.disabled {
+    background: rgba(239, 68, 68, 0.3);
+}
+
+.control-btn.disabled:hover {
+    background: rgba(239, 68, 68, 0.5);
+}
+
+.control-btn.end-call {
+    background: #ef4444;
+}
+
+.control-btn.end-call:hover {
+    background: #dc2626;
+    transform: scale(1.1);
+}
+
+@media (max-width: 768px) {
+    .local-video {
+        width: 120px;
+        height: 90px;
+        bottom: 100px;
+        right: 10px;
+    }
+
+    .call-controls {
+        bottom: 20px;
+        gap: var(--spacing-md);
+    }
+
+    .control-btn {
+        width: 48px;
+        height: 48px;
+    }
+
+    .active-call-window.minimized {
+        width: 280px;
+        height: 200px;
+    }
+}
