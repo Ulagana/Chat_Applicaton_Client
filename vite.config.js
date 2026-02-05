@@ -11,5 +11,19 @@ export default defineConfig({
                 changeOrigin: true,
             }
         }
+    },
+    define: {
+        // Fix for simple-peer: polyfill global variable
+        global: 'globalThis',
+    },
+    resolve: {
+        alias: {
+            // Polyfill Node.js modules for browser compatibility
+            events: 'events',
+            util: 'util',
+        }
+    },
+    optimizeDeps: {
+        include: ['events', 'util']
     }
 })

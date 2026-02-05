@@ -63,8 +63,90 @@
     padding: 0 var(--spacing-sm);
 }
 
+/* Media Styles - WhatsApp-like */
+.message-media {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.message-image,
+.message-video {
+    max-width: 300px;
+    width: 100%;
+    border-radius: var(--radius-md);
+    display: block;
+    object-fit: cover;
+}
+
+.message-image {
+    max-height: 400px;
+    cursor: pointer;
+    transition: transform var(--transition-base);
+}
+
+.message-image:hover {
+    transform: scale(1.02);
+}
+
+.message-video {
+    max-height: 300px;
+    background: #000;
+}
+
+.message-audio {
+    width: 250px;
+    height: 40px;
+}
+
+.media-caption {
+    margin: var(--spacing-xs) 0 0 0;
+    font-size: 0.875rem;
+    opacity: 0.9;
+}
+
+.message-file {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.file-link {
+    color: inherit;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-base);
+}
+
+.file-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.message.own .file-link:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Adjust bubble padding for media */
+.message-bubble:has(.message-media),
+.message-bubble:has(.message-file) {
+    padding: var(--spacing-xs);
+}
+
 @media (max-width: 768px) {
     .message-content {
         max-width: 85%;
+    }
+
+    .message-image,
+    .message-video {
+        max-width: 250px;
+    }
+
+    .message-audio {
+        width: 200px;
     }
 }

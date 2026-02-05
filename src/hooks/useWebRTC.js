@@ -81,7 +81,25 @@ export const useWebRTC = (userId) => {
             connectionRef.current = peer;
         } catch (error) {
             console.error('Error accessing media devices:', error);
-            alert('Could not access camera/microphone. Please check permissions.');
+
+            let errorMessage = 'Could not access camera/microphone.\n\n';
+
+            if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                errorMessage += 'Permission denied. Please:\n';
+                errorMessage += '1. Click the camera icon in your browser address bar\n';
+                errorMessage += '2. Allow camera and microphone access\n';
+                errorMessage += '3. Refresh the page and try again';
+            } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                errorMessage += 'No camera or microphone found.\n';
+                errorMessage += 'Please connect a camera/microphone and try again.';
+            } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+                errorMessage += 'Camera/microphone is already in use by another application.\n';
+                errorMessage += 'Please close other apps using your camera/microphone.';
+            } else {
+                errorMessage += 'Error: ' + error.message;
+            }
+
+            alert(errorMessage);
         }
     };
 
@@ -122,7 +140,24 @@ export const useWebRTC = (userId) => {
             connectionRef.current = peer;
         } catch (error) {
             console.error('Error accessing media devices:', error);
-            alert('Could not access camera/microphone. Please check permissions.');
+
+            let errorMessage = 'Could not access camera/microphone.\n\n';
+
+            if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                errorMessage += 'Permission denied. Please:\n';
+                errorMessage += '1. Click the camera icon in your browser address bar\n';
+                errorMessage += '2. Allow camera and microphone access\n';
+                errorMessage += '3. Try accepting the call again';
+            } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                errorMessage += 'No camera or microphone found.';
+            } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+                errorMessage += 'Camera/microphone is already in use.';
+            } else {
+                errorMessage += 'Error: ' + error.message;
+            }
+
+            alert(errorMessage);
+            setReceivingCall(false);
         }
     };
 

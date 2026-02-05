@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
 import { useSocket } from '../context/SocketContext';
-import { messageAPI } from '../utils/api';
+import { messageAPI, uploadAPI } from '../utils/api';
 import { getChatName, getChatAvatar, generateAvatar } from '../utils/helpers';
 import { FiSend, FiUsers, FiMoreVertical, FiPaperclip, FiPhone, FiVideo } from 'react-icons/fi';
 import Message from './Message';
@@ -118,11 +118,30 @@ const ChatWindow = () => {
     };
 
     const handleFileSelect = async (file, preview) => {
-        // For now, just send the file name as a message
-        // In Phase 2, we'll implement actual file upload to backend
-        const fileMessage = `📎 File: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
-
         try {
+            setLoading(true);
+
+            // Upload file to server
+            const { data: uploadData } = await uploadAPI.uploadFile(file);
+
+            // Determine file type and create appropriate message
+            let fileMessage = '';
+            const fileType = file.type.split('/')[0]; // 'image', 'video', 'audio', etc.
+
+            if (fileType === 'image') {
+                fileMessage = `📷 Image: ${file.name}`;
+            } else if (fileType === 'video') {
+                fileMessage = `🎥 Video: ${file.name}`;
+            } else if (fileType === 'audio') {
+                fileMessage = `🎵 Audio: ${file.name}`;
+            } else {
+                fileMessage = `📎 File: ${file.name}`;
+            }
+
+            // Add file URL to message
+            fileMessage += `\n${uploadData.file.url}`;
+
+            // Send message with file URL
             const { data } = await messageAPI.sendMessage(fileMessage, selectedChat._id);
             setMessages((prev) => [...prev, data]);
             setShowFileUpload(false);
@@ -131,7 +150,10 @@ const ChatWindow = () => {
                 socket.emit('new message', data);
             }
         } catch (error) {
-            console.error('Failed to send file:', error);
+            console.error('Failed to upload file:', error);
+            alert('Failed to upload file. Please try again.');
+        } finally {
+            setLoading(false);
         }
     };
 

@@ -61,4 +61,17 @@ export const messageAPI = {
     fetchMessages: (chatId) => api.get(`/message/${chatId}`),
 };
 
+// Upload API
+export const uploadAPI = {
+    uploadFile: (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        return api.post('/upload/single', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+    },
+};
+
 export default api;

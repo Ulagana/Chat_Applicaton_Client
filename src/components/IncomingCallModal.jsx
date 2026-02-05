@@ -1,10 +1,11 @@
 import { FiPhone, FiX } from 'react-icons/fi';
-import { getChatName, getChatAvatar, generateAvatar } from '../utils/helpers';
+import { generateAvatar } from '../utils/helpers';
 import './IncomingCallModal.css';
 
 const IncomingCallModal = ({ caller, callType, onAccept, onReject }) => {
-    const callerName = caller?.username || 'Unknown';
-    const callerAvatar = caller?.avatar;
+    // Handle caller as either a user object or just an ID string
+    const callerName = typeof caller === 'object' ? (caller?.username || 'Unknown') : 'Incoming Call';
+    const callerAvatar = typeof caller === 'object' ? caller?.avatar : null;
     const avatar = generateAvatar(callerName);
 
     return (
