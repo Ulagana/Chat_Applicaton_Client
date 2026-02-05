@@ -21,6 +21,7 @@ export const useWebRTC = (userId) => {
 
         // Listen for incoming calls
         socket.on('call-user', (data) => {
+            console.log('📞 Incoming call from:', data.from, 'Type:', data.callType);
             setReceivingCall(true);
             setCaller(data.from);
             setCallerSignal(data.signal);
@@ -28,11 +29,13 @@ export const useWebRTC = (userId) => {
         });
 
         socket.on('call-accepted', (signal) => {
+            console.log('✅ Call accepted by remote user');
             setCallAccepted(true);
             connectionRef.current.signal(signal);
         });
 
         socket.on('call-ended', () => {
+            console.log('📴 Call ended by remote user');
             endCall();
         });
 
@@ -45,11 +48,13 @@ export const useWebRTC = (userId) => {
 
     const startCall = async (userToCall, isVideo = true) => {
         try {
+            console.log('🎥 Starting call to:', userToCall, 'Video:', isVideo);
             const currentStream = await navigator.mediaDevices.getUserMedia({
                 video: isVideo,
                 audio: true
             });
 
+            console.log('✅ Got media stream:', currentStream);
             setStream(currentStream);
             setCallType(isVideo ? 'video' : 'audio');
 
@@ -64,6 +69,7 @@ export const useWebRTC = (userId) => {
             });
 
             peer.on('signal', (signal) => {
+                console.log('📡 Sending call signal to:', userToCall);
                 socket.emit('call-user', {
                     userToCall,
                     signalData: signal,
@@ -73,6 +79,7 @@ export const useWebRTC = (userId) => {
             });
 
             peer.on('stream', (remoteStream) => {
+                console.log('📺 Received remote stream');
                 if (userVideo.current) {
                     userVideo.current.srcObject = remoteStream;
                 }
