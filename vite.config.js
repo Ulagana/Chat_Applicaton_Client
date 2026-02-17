@@ -15,6 +15,7 @@ export default defineConfig({
     define: {
         // Fix for simple-peer: polyfill global variable
         global: 'globalThis',
+        'process.env': {},
     },
     resolve: {
         alias: {

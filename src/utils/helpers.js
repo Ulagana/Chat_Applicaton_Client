@@ -21,9 +21,10 @@ export const formatTime = (timestamp) => {
 // Get chat name for display
 export const getChatName = (chat, currentUser) => {
     if (!chat) return '';
+    if (!currentUser) return 'Chat';
 
     if (chat.isGroupChat) {
-        return chat.chatName;
+        return chat.chatName || 'Group Chat';
     }
 
     // For 1-on-1 chats, return the other user's name
@@ -33,7 +34,7 @@ export const getChatName = (chat, currentUser) => {
 
 // Get chat avatar
 export const getChatAvatar = (chat, currentUser) => {
-    if (!chat) return null;
+    if (!chat || !currentUser) return null;
 
     if (chat.isGroupChat) {
         return null; // Can use a group icon instead

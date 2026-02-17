@@ -4,13 +4,14 @@ import { useChat } from '../context/ChatContext';
 import { useSocket } from '../context/SocketContext';
 import { messageAPI, uploadAPI } from '../utils/api';
 import { getChatName, getChatAvatar, generateAvatar } from '../utils/helpers';
-import { FiSend, FiUsers, FiMoreVertical, FiPaperclip, FiPhone, FiVideo } from 'react-icons/fi';
+import { FiSend, FiUsers, FiMoreVertical, FiPaperclip, FiPhone, FiVideo, FiMic } from 'react-icons/fi';
 import Message from './Message';
 import GroupInfoModal from './GroupInfoModal';
 import EmojiPickerComponent from './EmojiPickerComponent';
 import FileUpload from './FileUpload';
 import IncomingCallModal from './IncomingCallModal';
 import ActiveCallWindow from './ActiveCallWindow';
+import VoiceRecorder from './VoiceRecorder';
 import { useWebRTC } from '../hooks/useWebRTC';
 import './ChatWindow.css';
 
@@ -23,6 +24,7 @@ const ChatWindow = () => {
     const [loading, setLoading] = useState(false);
     const [showGroupInfo, setShowGroupInfo] = useState(false);
     const [showFileUpload, setShowFileUpload] = useState(false);
+    const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
     const messagesEndRef = useRef(null);
     const typingTimeoutRef = useRef(null);
     const messageInputRef = useRef(null);
@@ -49,6 +51,30 @@ const ChatWindow = () => {
             }
         };
     }, [socket, selectedChat]);
+
+    // Listen for reaction updates
+    useEffect(() => {
+        if (socket) {
+            socket.on('reaction-added', (updatedMessage) => {
+                setMessages((prev) =>
+                    prev.map((msg) => (msg._id === updatedMessage._id ? updatedMessage : msg))
+                );
+            });
+
+            socket.on('reaction-removed', (updatedMessage) => {
+                setMessages((prev) =>
+                    prev.map((msg) => (msg._id === updatedMessage._id ? updatedMessage : msg))
+                );
+            });
+        }
+
+        return () => {
+            if (socket) {
+                socket.off('reaction-added');
+                socket.off('reaction-removed');
+            }
+        };
+    }, [socket]);
 
     useEffect(() => {
         scrollToBottom();
@@ -157,6 +183,74 @@ const ChatWindow = () => {
         }
     };
 
+    const handleVoiceSend = async (file, duration) => {
+        try {
+            setLoading(true);
+
+            // Upload voice file
+            const { data: uploadData } = await uploadAPI.uploadFile(file);
+
+            // Send message with voice URL and duration
+            const voiceMessage = `🎤 Voice message (${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, '0')})\n${uploadData.file.url}`;
+            const { data } = await messageAPI.sendMessage(voiceMessage, selectedChat._id);
+
+            // Update message type and duration
+            data.type = 'voice';
+            data.duration = duration;
+
+            setMessages((prev) => [...prev, data]);
+            setShowVoiceRecorder(false);
+
+            if (socket) {
+                socket.emit('new message', data);
+            }
+        } catch (error) {
+            console.error('Failed to send voice message:', error);
+            alert('Failed to send voice message. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Reaction handlers
+    const handleAddReaction = async (messageId, emoji) => {
+        try {
+            const { data } = await messageAPI.addReaction(messageId, emoji);
+            setMessages((prev) =>
+                prev.map((msg) => (msg._id === messageId ? data : msg))
+            );
+
+            // Emit socket event for real-time update
+            if (socket) {
+                socket.emit('add-reaction', {
+                    chatId: selectedChat._id,
+                    message: data
+                });
+            }
+        } catch (error) {
+            console.error('Failed to add reaction:', error);
+        }
+    };
+
+    const handleRemoveReaction = async (messageId, emoji) => {
+        try {
+            const { data } = await messageAPI.removeReaction(messageId, emoji);
+            setMessages((prev) =>
+                prev.map((msg) => (msg._id === messageId ? data : msg))
+            );
+
+            // Emit socket event for real-time update
+            if (socket) {
+                socket.emit('remove-reaction', {
+                    chatId: selectedChat._id,
+                    message: data
+                });
+            }
+        } catch (error) {
+            console.error('Failed to remove reaction:', error);
+        }
+    };
+
     // WebRTC Calling
     const {
         myVideo,
@@ -169,7 +263,8 @@ const ChatWindow = () => {
         answerCall,
         endCall,
         toggleAudio,
-        toggleVideo
+        toggleVideo,
+        stream
     } = useWebRTC(user?._id);
 
     const handleAudioCall = () => {
@@ -287,6 +382,9 @@ const ChatWindow = () => {
                                         index === 0 ||
                                         messages[index - 1].sender._id !== message.sender._id
                                     }
+                                    onAddReaction={handleAddReaction}
+                                    onRemoveReaction={handleRemoveReaction}
+                                    currentUserId={user._id}
                                 />
                             ))}
                             <div ref={messagesEndRef} />
@@ -313,6 +411,15 @@ const ChatWindow = () => {
                         title="Attach file"
                     >
                         <FiPaperclip size={20} />
+                    </button>
+
+                    <button
+                        type="button"
+                        className="btn btn-ghost"
+                        onClick={() => setShowVoiceRecorder(true)}
+                        title="Record voice message"
+                    >
+                        <FiMic size={20} />
                     </button>
 
                     <input
@@ -348,6 +455,13 @@ const ChatWindow = () => {
                 />
             )}
 
+            {showVoiceRecorder && (
+                <VoiceRecorder
+                    onSend={handleVoiceSend}
+                    onClose={() => setShowVoiceRecorder(false)}
+                />
+            )}
+
             {receivingCall && !callAccepted && (
                 <IncomingCallModal
                     caller={caller}
@@ -357,7 +471,7 @@ const ChatWindow = () => {
                 />
             )}
 
-            {callAccepted && (
+            {(callAccepted || stream) && !receivingCall && (
                 <ActiveCallWindow
                     myVideo={myVideo}
                     userVideo={userVideo}
@@ -365,6 +479,9 @@ const ChatWindow = () => {
                     onEndCall={endCall}
                     onToggleAudio={toggleAudio}
                     onToggleVideo={toggleVideo}
+                    isCalling={!callAccepted}
+                    contactName={getChatName(selectedChat, user)}
+                    hasStream={!!stream}
                 />
             )}
         </>

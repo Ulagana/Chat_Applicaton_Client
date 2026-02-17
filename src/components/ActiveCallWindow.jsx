@@ -8,7 +8,9 @@ const ActiveCallWindow = ({
     callType,
     onEndCall,
     onToggleAudio,
-    onToggleVideo
+    onToggleVideo,
+    contactName,
+    hasStream
 }) => {
     const [audioEnabled, setAudioEnabled] = useState(true);
     const [videoEnabled, setVideoEnabled] = useState(callType === 'video');
@@ -16,12 +18,14 @@ const ActiveCallWindow = ({
     const [callDuration, setCallDuration] = useState(0);
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            setCallDuration(prev => prev + 1);
-        }, 1000);
-
+        let interval;
+        if (!isCalling) {
+            interval = setInterval(() => {
+                setCallDuration(prev => prev + 1);
+            }, 1000);
+        }
         return () => clearInterval(interval);
-    }, []);
+    }, [isCalling]);
 
     const formatDuration = (seconds) => {
         const mins = Math.floor(seconds / 60);
@@ -39,16 +43,41 @@ const ActiveCallWindow = ({
         setVideoEnabled(enabled);
     };
 
+    // Helper to get initials
+    const getInitials = (name) => {
+        if (!name) return '?';
+        return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    };
+
     return (
         <div className={`active-call-window ${isMinimized ? 'minimized' : ''}`}>
-            <div className="call-video-container">
-                {/* Remote Video */}
-                <video
-                    ref={userVideo}
-                    autoPlay
-                    playsInline
-                    className="remote-video"
-                />
+            <div className={`call-video-container ${isCalling ? 'calling-state' : ''}`}>
+                {/* Remote Video - only show if connected or use placeholder */}
+                {!isCalling && (
+                    <video
+                        ref={userVideo}
+                        autoPlay
+                        playsInline
+                        className="remote-video"
+                    />
+                )}
+
+                {isCalling && (
+                    <div className="calling-overlay">
+                        <div className="calling-content">
+                            <div className="calling-avatar-pulse">
+                                <div className="avatar-placeholder-large">
+                                    {getInitials(contactName)}
+                                </div>
+                                <span className="pulse-ring"></span>
+                                <span className="pulse-ring delay"></span>
+                            </div>
+                            <h3>{contactName || 'User'}</h3>
+                            <p className="calling-status">Calling...</p>
+                            <p className="calling-hint">Waiting for answer</p>
+                        </div>
+                    </div>
+                )}
 
                 {/* Local Video */}
                 <video

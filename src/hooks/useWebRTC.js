@@ -46,6 +46,20 @@ export const useWebRTC = (userId) => {
         };
     }, [socket]);
 
+    // 30-second call timeout
+    useEffect(() => {
+        let timeout;
+        if (stream && !callAccepted && !receivingCall) {
+            timeout = setTimeout(() => {
+                console.log('⏱️ Call timed out (no answer)');
+                // Only end call if we initiated it (stream + !receivingCall) and not yet connected
+                // We'll clean up local state, but maybe should notify user
+                endCall();
+            }, 30000); // 30 seconds
+        }
+        return () => clearTimeout(timeout);
+    }, [stream, callAccepted, receivingCall]);
+
     const startCall = async (userToCall, isVideo = true) => {
         try {
             console.log('🎥 Starting call to:', userToCall, 'Video:', isVideo);
@@ -65,14 +79,37 @@ export const useWebRTC = (userId) => {
             const peer = new Peer({
                 initiator: true,
                 trickle: false,
-                stream: currentStream
+                stream: currentStream,
+                config: {
+                    iceServers: [
+                        // Google's public STUN server
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        // Free public TURN servers (replace with your own in production)
+                        {
+                            urls: 'turn:openrelay.metered.ca:80',
+                            username: 'openrelayproject',
+                            credential: 'openrelayproject'
+                        },
+                        {
+                            urls: 'turn:openrelay.metered.ca:443',
+                            username: 'openrelayproject',
+                            credential: 'openrelayproject'
+                        },
+                        {
+                            urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+                            username: 'openrelayproject',
+                            credential: 'openrelayproject'
+                        }
+                    ]
+                }
             });
 
             peer.on('signal', (signal) => {
                 console.log('📡 Sending call signal to:', userToCall);
                 socket.emit('call-user', {
                     userToCall,
-                    signalData: signal,
+                    signal: signal,
                     from: userId,
                     callType: isVideo ? 'video' : 'audio'
                 });
@@ -84,6 +121,21 @@ export const useWebRTC = (userId) => {
                     userVideo.current.srcObject = remoteStream;
                 }
             });
+
+            peer.on('error', (err) => {
+                console.error('❌ Peer connection error:', err);
+            });
+
+            peer.on('close', () => {
+                console.log('🔌 Peer connection closed');
+            });
+
+            // Monitor ICE connection state
+            if (peer._pc) {
+                peer._pc.oniceconnectionstatechange = () => {
+                    console.log('🧊 ICE connection state:', peer._pc.iceConnectionState);
+                };
+            }
 
             connectionRef.current = peer;
         } catch (error) {
@@ -127,7 +179,28 @@ export const useWebRTC = (userId) => {
             const peer = new Peer({
                 initiator: false,
                 trickle: false,
-                stream: currentStream
+                stream: currentStream,
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        {
+                            urls: 'turn:openrelay.metered.ca:80',
+                            username: 'openrelayproject',
+                            credential: 'openrelayproject'
+                        },
+                        {
+                            urls: 'turn:openrelay.metered.ca:443',
+                            username: 'openrelayproject',
+                            credential: 'openrelayproject'
+                        },
+                        {
+                            urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+                            username: 'openrelayproject',
+                            credential: 'openrelayproject'
+                        }
+                    ]
+                }
             });
 
             peer.on('signal', (signal) => {
@@ -142,6 +215,21 @@ export const useWebRTC = (userId) => {
                     userVideo.current.srcObject = remoteStream;
                 }
             });
+
+            peer.on('error', (err) => {
+                console.error('❌ Peer connection error:', err);
+            });
+
+            peer.on('close', () => {
+                console.log('🔌 Peer connection closed');
+            });
+
+            // Monitor ICE connection state
+            if (peer._pc) {
+                peer._pc.oniceconnectionstatechange = () => {
+                    console.log('🧊 ICE connection state:', peer._pc.iceConnectionState);
+                };
+            }
 
             peer.signal(callerSignal);
             connectionRef.current = peer;

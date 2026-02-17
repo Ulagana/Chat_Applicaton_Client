@@ -59,6 +59,8 @@ export const chatAPI = {
 export const messageAPI = {
     sendMessage: (content, chatId) => api.post('/message', { content, chatId }),
     fetchMessages: (chatId) => api.get(`/message/${chatId}`),
+    addReaction: (messageId, emoji) => api.post(`/message/${messageId}/reaction`, { emoji }),
+    removeReaction: (messageId, emoji) => api.delete(`/message/${messageId}/reaction/${encodeURIComponent(emoji)}`),
 };
 
 // Upload API
